@@ -4,6 +4,7 @@ import android.animation.LayoutTransition;
 import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
+import android.graphics.Color;
 import android.os.Build;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
@@ -11,10 +12,12 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.LeadingMarginSpan;
 import android.util.AttributeSet;
 import android.util.TypedValue;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -180,6 +183,21 @@ public class JsonViewer extends LinearLayout {
 
         textViewHeader = getHeader(nodeKey, jsonNode, haveNext, true, haveChild);
 
+        // todo 通过这种方式，可以实现"过滤"，"映射"功能。
+        textViewHeader.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                v.setSelected(!v.isSelected());
+                if (v.isSelected()) {
+                    v.setBackgroundColor(Color.RED);
+                    Toast.makeText(getContext(), jsonNode.toString(), Toast.LENGTH_SHORT).show();
+                } else {
+                    v.setBackgroundColor(Color.TRANSPARENT);
+                }
+
+            }
+        });
+
         content.addView(textViewHeader);
 
         if (haveChild) {
@@ -189,30 +207,30 @@ public class JsonViewer extends LinearLayout {
             content.addView(viewGroupChild);
             content.addView(textViewFooter);
 
-            textViewHeader.setOnClickListener(new OnClickListener() {
-                @Override
-                public void onClick(View view) {
-
-                    if (viewGroupChild == null)
-                        return;
-
-                    int newVisibility;
-                    boolean showChild;
-
-                    if (viewGroupChild.getVisibility() == VISIBLE) {
-                        newVisibility = GONE;
-                        showChild = false;
-                    } else {
-                        newVisibility = VISIBLE;
-                        showChild = true;
-                    }
-                    textViewHeader.setText(getHeaderText(nodeKey, jsonNode, haveNext, showChild, haveChild));
-                    viewGroupChild.setVisibility(newVisibility);
-                    if (textViewFooter != null) {
-                        textViewFooter.setVisibility(newVisibility);
-                    }
-                }
-            });
+//            textViewHeader.setOnClickListener(new OnClickListener() {
+//                @Override
+//                public void onClick(View view) {
+//
+//                    if (viewGroupChild == null)
+//                        return;
+//
+//                    int newVisibility;
+//                    boolean showChild;
+//
+//                    if (viewGroupChild.getVisibility() == VISIBLE) {
+//                        newVisibility = GONE;
+//                        showChild = false;
+//                    } else {
+//                        newVisibility = VISIBLE;
+//                        showChild = true;
+//                    }
+//                    textViewHeader.setText(getHeaderText(nodeKey, jsonNode, haveNext, showChild, haveChild));
+//                    viewGroupChild.setVisibility(newVisibility);
+//                    if (textViewFooter != null) {
+//                        textViewFooter.setVisibility(newVisibility);
+//                    }
+//                }
+//            });
         }
 
     }
