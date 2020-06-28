@@ -12,7 +12,6 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.LeadingMarginSpan;
 import android.util.AttributeSet;
 import android.util.TypedValue;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -40,6 +39,12 @@ public class JsonViewer extends LinearLayout {
     private int textColorNull;
     @ColorInt
     private int textColorNumber;
+    @ColorInt
+    private int colorSelected = Color.GRAY;
+
+    private boolean mEnableSelect;
+    private boolean mEnableMultiSelect;
+    private Object mSelectedObject;
 
     public JsonViewer(Context context) {
         super(context);
@@ -124,6 +129,15 @@ public class JsonViewer extends LinearLayout {
         textColorNull = color;
     }
 
+    public void setEnableSelect(boolean enableSelect, boolean enableMultiSelect) {
+        mEnableSelect = enableSelect;
+        mEnableMultiSelect = enableMultiSelect;
+    }
+
+    public Object getSelectedObject() {
+        return mSelectedObject;
+    }
+
     /**
      * It will collapse all nodes, except the main one.
      */
@@ -182,22 +196,6 @@ public class JsonViewer extends LinearLayout {
         final TextView textViewHeader;
 
         textViewHeader = getHeader(nodeKey, jsonNode, haveNext, true, haveChild);
-
-        // todo 通过这种方式，可以实现"过滤"，"映射"功能。
-        textViewHeader.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                v.setSelected(!v.isSelected());
-                if (v.isSelected()) {
-                    v.setBackgroundColor(Color.RED);
-                    Toast.makeText(getContext(), jsonNode.toString(), Toast.LENGTH_SHORT).show();
-                } else {
-                    v.setBackgroundColor(Color.TRANSPARENT);
-                }
-
-            }
-        });
-
         content.addView(textViewHeader);
 
         if (haveChild) {
@@ -207,32 +205,60 @@ public class JsonViewer extends LinearLayout {
             content.addView(viewGroupChild);
             content.addView(textViewFooter);
 
-//            textViewHeader.setOnClickListener(new OnClickListener() {
-//                @Override
-//                public void onClick(View view) {
-//
-//                    if (viewGroupChild == null)
-//                        return;
-//
-//                    int newVisibility;
-//                    boolean showChild;
-//
-//                    if (viewGroupChild.getVisibility() == VISIBLE) {
-//                        newVisibility = GONE;
-//                        showChild = false;
-//                    } else {
-//                        newVisibility = VISIBLE;
-//                        showChild = true;
-//                    }
-//                    textViewHeader.setText(getHeaderText(nodeKey, jsonNode, haveNext, showChild, haveChild));
-//                    viewGroupChild.setVisibility(newVisibility);
-//                    if (textViewFooter != null) {
-//                        textViewFooter.setVisibility(newVisibility);
-//                    }
-//                }
-//            });
-        }
+            if (!mEnableSelect) {
+                textViewHeader.setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
 
+                        if (viewGroupChild == null)
+                            return;
+
+                        int newVisibility;
+                        boolean showChild;
+
+                        if (viewGroupChild.getVisibility() == VISIBLE) {
+                            newVisibility = GONE;
+                            showChild = false;
+                        } else {
+                            newVisibility = VISIBLE;
+                            showChild = true;
+                        }
+                        textViewHeader.setText(getHeaderText(nodeKey, jsonNode, haveNext, showChild, haveChild));
+                        viewGroupChild.setVisibility(newVisibility);
+                        if (textViewFooter != null) {
+                            textViewFooter.setVisibility(newVisibility);
+                        }
+                    }
+                });
+            }
+
+            // todo 通过这种方式，可以实现"过滤"，"映射"功能。
+            if (mEnableSelect) {
+                textViewHeader.setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        changeChildrenSelectedState(JsonViewer.this, false); // only selected one
+                        v.setSelected(true);
+                        mSelectedObject = jsonNode;
+                        Toast.makeText(getContext(), jsonNode.toString(), Toast.LENGTH_SHORT).show();
+
+                        v.setBackgroundColor(colorSelected);
+                        viewGroupChild.setBackgroundColor(colorSelected);
+                        textViewFooter.setBackgroundColor(colorSelected);
+                    }
+                });
+            }
+        } else {
+            textViewHeader.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    changeChildrenSelectedState(JsonViewer.this, false);
+                    v.setSelected(true);
+                    mSelectedObject = jsonNode;
+                    v.setBackgroundColor(colorSelected);
+                }
+            });
+        }
     }
 
     /**
@@ -369,5 +395,25 @@ public class JsonViewer extends LinearLayout {
         if (haveNext)
             builder.append(",");
         return builder;
+    }
+
+    private void changeChildrenSelectedState(View root, boolean isSelected) {
+        if (root != null) {
+            root.setSelected(isSelected);
+            root.setBackgroundColor(isSelected ? colorSelected : Color.TRANSPARENT);
+            if (root instanceof ViewGroup) {
+                int len = ((ViewGroup) root).getChildCount();
+                if (len > 0) {
+                    for (int i = 0; i < len; i++) {
+                        View child = ((ViewGroup) root).getChildAt(i);
+                        child.setSelected(isSelected);
+                        child.setBackgroundColor(isSelected ? colorSelected : Color.TRANSPARENT);
+                        if (child instanceof ViewGroup) {
+                            changeChildrenSelectedState((ViewGroup) child, isSelected);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

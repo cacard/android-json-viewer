@@ -23,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         jsonViewer = findViewById(R.id.jsonViewer);
+        jsonViewer.setEnableSelect(true, false);
         try {
             jsonViewer.setJson(new JSONObject(json));
         } catch (JSONException e) {
